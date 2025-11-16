@@ -5,6 +5,7 @@ import de.warehouse.domain.ports.ItemRepositoryPort;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class ItemService {
@@ -25,5 +26,8 @@ public class ItemService {
 
     public static class DuplicateSkuException extends RuntimeException {
         public DuplicateSkuException(String sku) { super("SKU already exists: " + sku); }
+
     }
+
+
 }
