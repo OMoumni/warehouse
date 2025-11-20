@@ -8,25 +8,19 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import java.net.URI;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-
 
 @Path("/items")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ItemResource {
 
-
-
     @Inject ItemService service;
     @Context UriInfo uri;
-
-
 
     public static record CreateItemDTO(String sku, String name, String unit, String defaultLocation) {}
     public static record ItemResponse(String sku, String name, String unit, String defaultLocation, Links _links) {}
     public static record Links(String self) {}
+    record ErrorPayload(int code, String message) {}
 
     @POST
     public Response create(CreateItemDTO dto) {
@@ -46,8 +40,17 @@ public class ItemResource {
         }
     }
 
-    // Minimal error payload (consistent)
-    record ErrorPayload(int code, String message) {}
-
+    @DELETE
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Long id) {
+        try {
+            service.deleteById(id);
+            return Response.noContent().build();
+        } catch (IllegalArgumentException ex) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorPayload(404, ex.getMessage()))
+                    .build();
+        }
+    }
 
 }
