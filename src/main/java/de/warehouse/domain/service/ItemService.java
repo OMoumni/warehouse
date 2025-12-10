@@ -26,10 +26,11 @@ public class ItemService {
 
     public void deleteById(Long id) {
         if (!repo.existsById(id)) {
-            throw new IllegalArgumentException("Item not found: " + id);
+            throw new IllegalArgumentException("Item not found");
         }
         repo.deleteById(id);
     }
+
 
 
     public static class DuplicateSkuException extends RuntimeException {

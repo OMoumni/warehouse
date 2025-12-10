@@ -31,7 +31,8 @@ public class ItemRepositoryAdapter implements ItemRepositoryPort {
         e.unit = item.getUnit();
         e.defaultLocation = item.getDefaultLocation();
         em.persist(e);
-        return new Item(e.sku, e.name, e.unit, e.defaultLocation);
+        item.setId(e.id);
+        return item;
     }
 
     @Override

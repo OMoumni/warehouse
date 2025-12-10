@@ -14,7 +14,6 @@ class ItemServiceTest {
     // Fake repository ausschließlich für Tests
     static class FakeRepo implements ItemRepositoryPort {
 
-        // Map<Long, Item> für ID-basiertes Speichern
         private final Map<Long, Item> items = new HashMap<>();
         private long idCounter = 1;
 
@@ -25,9 +24,12 @@ class ItemServiceTest {
         }
 
         @Override
-        public Item save(Item i) {
-            items.put(idCounter++, i);
-            return i;
+        public Item save(Item item) {
+            if (item.getId() == null) {
+                item.setId(Long.valueOf(idCounter++));
+            }
+            items.put(item.getId(), item);
+            return item;
         }
 
         @Override
@@ -68,13 +70,16 @@ class ItemServiceTest {
         var repo = new FakeRepo();
         var service = new ItemService(repo);
 
-        // Speichere Item → erhält ID = 1
-        repo.save(new Item("X1", "Test", "Unit", "Loc"));
+        Item item = new Item("X1", "Test", "Unit", "Loc");
+        repo.save(item);
 
-        assertTrue(repo.existsById(1L));
+        Long id = item.getId();
 
-        service.deleteById(1L);
+        assertNotNull(id);
+        assertTrue(repo.existsById(id));
 
-        assertFalse(repo.existsById(1L));
+        service.deleteById(id);
+
+        assertFalse(repo.existsById(id));
     }
 }
