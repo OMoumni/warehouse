@@ -1,4 +1,4 @@
-package de.warehouse.domain.service;
+package de.warehouse.application.service;
 
 import de.warehouse.domain.model.Item;
 import de.warehouse.domain.ports.ItemRepositoryPort;
