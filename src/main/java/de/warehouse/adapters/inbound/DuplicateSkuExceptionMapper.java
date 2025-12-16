@@ -1,6 +1,6 @@
 package de.warehouse.adapters.inbound;
 
-import de.warehouse.domain.service.ItemService;
+import de.warehouse.application.ItemService;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;

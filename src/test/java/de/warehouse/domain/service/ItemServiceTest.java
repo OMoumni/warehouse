@@ -1,5 +1,6 @@
 package de.warehouse.domain.service;
 
+import de.warehouse.application.ItemService;
 import de.warehouse.domain.model.Item;
 import de.warehouse.domain.ports.ItemRepositoryPort;
 import org.junit.jupiter.api.Test;

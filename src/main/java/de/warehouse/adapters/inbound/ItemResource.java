@@ -1,7 +1,7 @@
 package de.warehouse.adapters.inbound;
 
 import de.warehouse.domain.model.Item;
-import de.warehouse.domain.service.ItemService;
+import de.warehouse.application.ItemService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
