@@ -3,49 +3,58 @@ package de.warehouse.adapters.outbound.jpa;
 import de.warehouse.domain.model.Item;
 import de.warehouse.domain.ports.ItemRepositoryPort;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @ApplicationScoped
 public class ItemRepositoryAdapter implements ItemRepositoryPort {
 
-    @Inject
-    EntityManager em;
+    private final ItemEntityRepository repository;
 
-    @Override
-    public boolean existsBySku(String sku) {
-        Long cnt = em.createQuery(
-                        "select count(i) from ItemEntity i where i.sku = :sku", Long.class)
-                .setParameter("sku", sku)
-                .getSingleResult();
-        return cnt != null && cnt > 0;
+    public ItemRepositoryAdapter(ItemEntityRepository repository) {
+        this.repository = repository;
     }
 
     @Override
-    @Transactional
     public Item save(Item item) {
-        ItemEntity e = new ItemEntity();
-        e.sku = item.getSku();
-        e.name = item.getName();
-        e.unit = item.getUnit();
-        e.defaultLocation = item.getDefaultLocation();
-        em.persist(e);
-        item.setId(e.id);
+        ItemEntity entity = ItemEntity.fromDomain(item);
+
+        ItemEntity managed;
+        if (item.getId() == null) {
+            managed = repository.persist(entity);
+        } else {
+            managed = repository.merge(entity);
+        }
+
+        item.setId(managed.id);
         return item;
+    }
+
+
+    @Override
+    public boolean existsBySku(String sku) {
+        return repository.existsBySku(sku);
     }
 
     @Override
     public boolean existsById(Long id) {
-        return em.find(ItemEntity.class, id) != null;
+        return repository.existsById(id);
     }
 
     @Override
-    @Transactional
     public void deleteById(Long id) {
-        ItemEntity entity = em.find(ItemEntity.class, id);
-        if (entity != null) {
-            em.remove(entity);
-        }
+        repository.deleteById(id);
+    }
+    @Override
+    public Optional<Item> findById(Long id) {
+        return repository.findById(id).map(ItemEntity::toDomain);
+    }
+
+    @Override
+    public List<Item> findAll(int offset, int limit) {
+        return repository.findAll(offset, limit).stream()
+                .map(ItemEntity::toDomain)
+                .toList();
     }
 }

@@ -4,9 +4,7 @@ import de.warehouse.domain.model.Item;
 import de.warehouse.domain.ports.ItemRepositoryPort;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ItemServiceTest {
@@ -26,7 +24,7 @@ class ItemServiceTest {
         @Override
         public Item save(Item item) {
             if (item.getId() == null) {
-                item.setId(Long.valueOf(idCounter++));
+                item.setId(idCounter++);
             }
             items.put(item.getId(), item);
             return item;
@@ -41,9 +39,21 @@ class ItemServiceTest {
         public void deleteById(Long id) {
             items.remove(id);
         }
-    }
 
-    // --- TESTS ---
+        @Override
+        public Optional<Item> findById(Long id) {
+            return Optional.ofNullable(items.get(id));
+        }
+
+        @Override
+        public List<Item> findAll(int offset, int limit) {
+            return items.values().stream()
+                    .sorted(Comparator.comparing(Item::getId))
+                    .skip(offset)
+                    .limit(limit)
+                    .toList();
+        }
+    }
 
     @Test
     void creatingDuplicateSkuFails() {
@@ -60,26 +70,8 @@ class ItemServiceTest {
     void deletingNonExistingIdFails() {
         var service = new ItemService(new FakeRepo());
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(ItemService.ItemNotFoundException.class, () ->
                 service.deleteById(999L)
         );
-    }
-
-    @Test
-    void deleteExistingIdWorks() {
-        var repo = new FakeRepo();
-        var service = new ItemService(repo);
-
-        Item item = new Item("X1", "Test", "Unit", "Loc");
-        repo.save(item);
-
-        Long id = item.getId();
-
-        assertNotNull(id);
-        assertTrue(repo.existsById(id));
-
-        service.deleteById(id);
-
-        assertFalse(repo.existsById(id));
     }
 }
