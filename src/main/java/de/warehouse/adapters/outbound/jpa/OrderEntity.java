@@ -6,6 +6,8 @@ import de.warehouse.domain.model.Priority;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -24,7 +26,7 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     public OrderStatus status;
 
-    public Instant createdAt;
+   // public Instant createdAt;
 
     public static OrderEntity fromDomain(Order order) {
         OrderEntity e = new OrderEntity();
@@ -32,13 +34,38 @@ public class OrderEntity {
         e.storeCode = order.getStoreCode();
         e.priority = order.getPriority();
         e.status = order.getStatus();
-        e.createdAt = order.getCreatedAt();
+
+        e.lines = order.getLines().stream().map(line -> {
+            OrderLineEntity le = new OrderLineEntity();
+            le.itemId = line.getItemId();
+            le.quantity = line.getQuantity();
+            le.order = e;
+            return le;
+        }).toList();
+
         return e;
     }
 
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+    )
+    public List<OrderLineEntity> lines = new ArrayList<>();
+
     public Order toDomain() {
         Order order = new Order(id, storeCode, priority);
-        order.setId(id);
+
+
+        order.setStatus(this.status);
+
+        for (OrderLineEntity line : lines) {
+            order.addItem(line.itemId, line.quantity);
+        }
+
         return order;
     }
+
 }
+

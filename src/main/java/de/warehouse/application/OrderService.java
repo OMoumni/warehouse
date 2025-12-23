@@ -2,17 +2,23 @@ package de.warehouse.application;
 
 import de.warehouse.domain.model.Order;
 import de.warehouse.domain.model.Priority;
+import de.warehouse.domain.ports.ItemRepositoryPort;
 import de.warehouse.domain.ports.OrderRepositoryPort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
+
 @ApplicationScoped
 public class OrderService {
 
-    private final OrderRepositoryPort repo;
+    private final OrderRepositoryPort orderRepo;
+    private final ItemRepositoryPort itemRepo;
 
-    public OrderService(OrderRepositoryPort repo) {
-        this.repo = repo;
+    public OrderService(OrderRepositoryPort orderRepo,
+                        ItemRepositoryPort itemRepo) {
+        this.orderRepo = orderRepo;
+        this.itemRepo = itemRepo;
     }
 
     @Transactional
@@ -22,12 +28,31 @@ public class OrderService {
         }
 
         Order order = new Order(null, storeCode, priority);
-        return repo.save(order);
+        return orderRepo.save(order);
     }
+
     @Transactional
     public Order getById(Long id) {
-        return repo.findById(id)
+        return orderRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
     }
+
+    @Transactional
+    public void addItem(Long orderId, Long itemId, int quantity) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!itemRepo.existsById(itemId)) {
+            throw new IllegalArgumentException("Item not found");
+        }
+
+        order.addItem(itemId, quantity);
+        orderRepo.save(order);
+    }
+    @Transactional
+    public List<Order> getOrdersByStore(String storeCode) {
+        return orderRepo.findByStoreCode(storeCode);
+    }
+
 
 }
