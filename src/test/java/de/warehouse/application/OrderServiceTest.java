@@ -104,5 +104,21 @@ class OrderServiceTest {
         assertEquals(1, order.getLines().size());
         assertEquals(3, order.getLines().get(0).getQuantity());
     }
+    @Test
+    void get_orders_by_storeCode_returns_only_matching_orders() {
+        var orderRepo = new FakeOrderRepo();
+        var itemRepo = new FakeItemRepo();
+        var service = new OrderService(orderRepo, itemRepo);
+
+        service.create("30", Priority.HIGH);
+        service.create("30", Priority.LOW);
+        service.create("99", Priority.HIGH);
+
+        var result = service.getOrdersByStore("30");
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().allMatch(o -> o.getStoreCode().equals("30")));
+    }
+
 
 }
