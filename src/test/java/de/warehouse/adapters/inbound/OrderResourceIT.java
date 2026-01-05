@@ -51,6 +51,22 @@ class OrderResourceIT {
                 .body("priority", equalTo("HIGH"))
                 .body("status", equalTo("CREATED"));
     }
+    @Test
+    void add_item_with_negative_quantity_returns_400() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("""
+            {
+              "itemId": 1,
+              "quantity": -1
+            }
+        """)
+                .when()
+                .post("/orders/1/items")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("Quantity"));
+    }
 
 
 
