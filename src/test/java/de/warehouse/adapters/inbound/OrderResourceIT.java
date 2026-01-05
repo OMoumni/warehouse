@@ -53,20 +53,37 @@ class OrderResourceIT {
     }
     @Test
     void add_item_with_negative_quantity_returns_400() {
+
+        // 1) create fresh order
+        String location =
+                given()
+                        .contentType("application/json")
+                        .body("""
+                      { "storeCode": "TEST-1", "priority": "HIGH" }
+                      """)
+                        .when()
+                        .post("/orders")
+                        .then()
+                        .statusCode(201)
+                        .extract()
+                        .header("Location");
+
+        // Location ist z.B. http://localhost:8081/orders/123
+        String id = location.substring(location.lastIndexOf('/') + 1);
+
+        // 2) test negative quantity on THAT fresh order
         given()
-                .contentType(ContentType.JSON)
+                .contentType("application/json")
                 .body("""
-            {
-              "itemId": 1,
-              "quantity": -1
-            }
-        """)
+              { "itemId": 1, "quantity": -1 }
+              """)
                 .when()
-                .post("/orders/1/items")
+                .post("/orders/" + id + "/items")
                 .then()
                 .statusCode(400)
-                .body("message", containsString("Quantity"));
+                .body("message", org.hamcrest.Matchers.containsString("Quantity"));
     }
+
 
 
 
