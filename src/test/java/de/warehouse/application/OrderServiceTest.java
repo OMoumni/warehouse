@@ -119,6 +119,33 @@ class OrderServiceTest {
         assertEquals(2, result.size());
         assertTrue(result.stream().allMatch(o -> o.getStoreCode().equals("30")));
     }
+    @Test
+    void complete_order_with_items_sets_done() {
+        var orderRepo = new FakeOrderRepo();
+        var itemRepo = new FakeItemRepo();
+        var service = new OrderService(orderRepo, itemRepo);
+
+        Order order = service.create("STORE-1", Priority.HIGH);
+        service.addItem(order.getId(), 10L, 1);
+
+        Order completed = service.complete(order.getId());
+
+        assertEquals(OrderStatus.DONE, completed.getStatus());
+    }
+
+    @Test
+    void complete_order_without_items_sets_failed() {
+        var orderRepo = new FakeOrderRepo();
+        var itemRepo = new FakeItemRepo();
+        var service = new OrderService(orderRepo, itemRepo);
+
+        Order order = service.create("STORE-1", Priority.HIGH);
+
+        Order completed = service.complete(order.getId());
+
+        assertEquals(OrderStatus.FAILED, completed.getStatus());
+    }
+
 
 
 }

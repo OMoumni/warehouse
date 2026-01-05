@@ -64,5 +64,14 @@ public class OrderService {
         return orderRepo.findByStoreCode(storeCode);
     }
 
+    @Transactional
+    public Order complete(Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        order.complete();
+        return orderRepo.save(order);
+    }
+
 
 }

@@ -101,4 +101,11 @@ public class OrderResource {
                 .map(order -> OrderResponse.from(order, uri))
                 .toList();
     }
+
+    @PUT
+    @Path("/{id}/complete")
+    public OrderResponse complete(@PathParam("id") Long id, @Context UriInfo uri) {
+        return OrderResponse.from(service.complete(id), uri);
+    }
+
 }

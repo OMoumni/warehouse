@@ -41,5 +41,17 @@ public class Order {
     public void setStatus(OrderStatus status) {
         this.status = status;
     }
+    public void complete() {
+        if (status == OrderStatus.DONE || status == OrderStatus.FAILED) {
+            throw new IllegalStateException("Order already completed");
+        }
+
+        if (lines == null || lines.isEmpty()) {
+            status = OrderStatus.FAILED;
+        } else {
+            status = OrderStatus.DONE;
+        }
+    }
+
 
 }
