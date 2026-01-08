@@ -75,7 +75,7 @@ public class ItemService {
 
         Item updated = new Item(
                 existing.getId(),
-                existing.getSku(), // SKU bleibt unverändert
+                existing.getSku(),
                 name,
                 unit,
                 defaultLocation

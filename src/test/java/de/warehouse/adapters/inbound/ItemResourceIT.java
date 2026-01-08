@@ -27,6 +27,7 @@ class ItemResourceIT {
                         .header("Location", notNullValue())
                         .extract().header("Location");
 
+
         given()
                 .when()
                 .get(location)

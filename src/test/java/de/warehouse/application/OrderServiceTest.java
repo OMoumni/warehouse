@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OrderServiceTest {
 
-    // 🔹 Fake Order Repo
+    // Fake Order Repo
     static class FakeOrderRepo implements OrderRepositoryPort {
 
         private final Map<Long, Order> orders = new HashMap<>();
@@ -45,13 +45,12 @@ class OrderServiceTest {
         }
     }
 
-
-    // 🔹 Fake Item Repo
+    // Fake Item Repo
     static class FakeItemRepo implements ItemRepositoryPort {
 
         @Override
         public boolean existsById(Long id) {
-            return true;
+            return true; // in tests: item always "exists"
         }
 
         @Override
@@ -73,11 +72,11 @@ class OrderServiceTest {
         public List<Item> findAll(int offset, int limit) {
             return List.of();
         }
+
         @Override
         public void deleteById(Long id) {
             // no-op
         }
-
     }
 
     @Test
@@ -91,6 +90,7 @@ class OrderServiceTest {
         assertNotNull(order.getId());
         assertEquals(OrderStatus.CREATED, order.getStatus());
     }
+
     @Test
     void add_item_to_order_works() {
         var orderRepo = new FakeOrderRepo();
@@ -99,11 +99,15 @@ class OrderServiceTest {
 
         Order order = service.create("STORE-1", Priority.HIGH);
 
-        service.addItem(order.getId(), 10L, 3);
+        service.addItem(order.getId(), 10L, 3, "R1-A");
 
         assertEquals(1, order.getLines().size());
-        assertEquals(3, order.getLines().get(0).getQuantity());
+        assertEquals(10L, order.getLines().get(0).getItemId());
+        assertEquals(3, order.getLines().get(0).getQtyRequired());
+        assertEquals(0, order.getLines().get(0).getQtyPicked());
+        assertEquals("R1-A", order.getLines().get(0).getLocation());
     }
+
     @Test
     void get_orders_by_storeCode_returns_only_matching_orders() {
         var orderRepo = new FakeOrderRepo();
@@ -119,19 +123,6 @@ class OrderServiceTest {
         assertEquals(2, result.size());
         assertTrue(result.stream().allMatch(o -> o.getStoreCode().equals("30")));
     }
-    @Test
-    void complete_order_with_items_sets_done() {
-        var orderRepo = new FakeOrderRepo();
-        var itemRepo = new FakeItemRepo();
-        var service = new OrderService(orderRepo, itemRepo);
-
-        Order order = service.create("STORE-1", Priority.HIGH);
-        service.addItem(order.getId(), 10L, 1);
-
-        Order completed = service.complete(order.getId());
-
-        assertEquals(OrderStatus.DONE, completed.getStatus());
-    }
 
     @Test
     void complete_order_without_items_sets_failed() {
@@ -146,6 +137,37 @@ class OrderServiceTest {
         assertEquals(OrderStatus.FAILED, completed.getStatus());
     }
 
+    @Test
+    void pick_then_complete_sets_done() {
+        var orderRepo = new FakeOrderRepo();
+        var itemRepo = new FakeItemRepo();
+        var service = new OrderService(orderRepo, itemRepo);
 
+        Order order = service.create("STORE-1", Priority.HIGH);
+        service.addItem(order.getId(), 10L, 2, "R1-A");
 
+        // picking 2 of 2 -> fully picked
+        service.pickItem(order.getId(), 10L, 2);
+
+        Order completed = service.complete(order.getId());
+
+        assertEquals(OrderStatus.DONE, completed.getStatus());
+    }
+
+    @Test
+    void pick_partial_then_complete_sets_failed() {
+        var orderRepo = new FakeOrderRepo();
+        var itemRepo = new FakeItemRepo();
+        var service = new OrderService(orderRepo, itemRepo);
+
+        Order order = service.create("STORE-1", Priority.HIGH);
+        service.addItem(order.getId(), 10L, 2, "R1-A");
+
+        // pick only 1 of 2
+        service.pickItem(order.getId(), 10L, 1);
+
+        Order completed = service.complete(order.getId());
+
+        assertEquals(OrderStatus.FAILED, completed.getStatus());
+    }
 }

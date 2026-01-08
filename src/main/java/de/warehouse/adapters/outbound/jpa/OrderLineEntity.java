@@ -14,7 +14,13 @@ public class OrderLineEntity {
     public Long itemId;
 
     @Column(nullable = false)
-    public int quantity;
+    public int qtyRequired;
+
+    @Column(nullable = false)
+    public int qtyPicked;
+
+    @Column(nullable = false)
+    public String location;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")

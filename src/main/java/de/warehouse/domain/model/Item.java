@@ -20,7 +20,6 @@ public class Item {
         return id;
     }
 
-    // bewusst nur vom Repository nutzbar
     public void setId(Long id) {
         this.id = id;
     }

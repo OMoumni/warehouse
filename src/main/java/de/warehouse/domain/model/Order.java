@@ -3,6 +3,7 @@ package de.warehouse.domain.model;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
 public class Order {
 
     private Long id;
@@ -26,32 +27,58 @@ public class Order {
     public OrderStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
 
-    public void setId(Long id) { this.id = id; }
+    public List<OrderLine> getLines() { return lines; }
 
-    public void addItem(Long itemId, int quantity) {
+    public void setId(Long id) { this.id = id; }
+    public void setStatus(OrderStatus status) { this.status = status; }
+
+    public void addItem(Long itemId, int qtyRequired, String location) {
         if (status != OrderStatus.CREATED) {
             throw new IllegalStateException("cannot add items when status is " + status);
         }
-        lines.add(new OrderLine(itemId, quantity));
+        lines.add(new OrderLine(itemId, qtyRequired, location));
     }
 
-    public List<OrderLine> getLines() {
-        return List.copyOf(lines);
+    public void pickItem(Long itemId, int qty) {
+        if (itemId == null) throw new IllegalArgumentException("itemId must not be null");
+        if (qty <= 0) throw new IllegalArgumentException("qty must be > 0");
+
+        if (status == OrderStatus.CREATED) {
+            status = OrderStatus.IN_PROGRESS;
+        }
+        if (status != OrderStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Picking only allowed in IN_PROGRESS");
+        }
+
+        OrderLine line = lines.stream()
+                .filter(l -> l.getItemId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Item not in order"));
+
+        line.pick(qty);
     }
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
+
     public void complete() {
-        if (status == OrderStatus.DONE || status == OrderStatus.FAILED) {
-            throw new IllegalStateException("Order already completed");
-        }
-
-        if (lines == null || lines.isEmpty()) {
+        if (status == OrderStatus.CREATED) {
             status = OrderStatus.FAILED;
-        } else {
-            status = OrderStatus.DONE;
+            return;
         }
-    }
 
+        if (status != OrderStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Order can only be completed in CREATED or IN_PROGRESS");
+        }
+
+        boolean allPicked = !lines.isEmpty()
+                && lines.stream().allMatch(OrderLine::isFullyPicked);
+
+        status = allPicked ? OrderStatus.DONE : OrderStatus.FAILED;
+    }
+    public void restoreLine(Long itemId, int qtyRequired, int qtyPicked, String location) {
+        OrderLine line = new OrderLine(itemId, qtyRequired, location);
+        if (qtyPicked > 0) {
+            line.pick(qtyPicked);
+        }
+        lines.add(line);
+    }
 
 }

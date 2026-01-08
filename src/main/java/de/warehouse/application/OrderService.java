@@ -39,17 +39,19 @@ public class OrderService {
     }
 
     @Transactional
-    public void addItem(Long orderId, Long itemId, int quantity) {
-
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than 0");
-        }
+    public void addItem(Long orderId, Long itemId, int qtyRequired, String location) {
 
         if (orderId == null) {
             throw new IllegalArgumentException("orderId must not be null");
         }
         if (itemId == null) {
             throw new IllegalArgumentException("itemId must not be null");
+        }
+        if (qtyRequired <= 0) {
+            throw new IllegalArgumentException("qtyRequired must be greater than 0");
+        }
+        if (location == null || location.isBlank()) {
+            throw new IllegalArgumentException("location must not be blank");
         }
 
         Order order = orderRepo.findById(orderId)
@@ -63,9 +65,10 @@ public class OrderService {
             throw new IllegalArgumentException("Item not found");
         }
 
-        order.addItem(itemId, quantity);
+        order.addItem(itemId, qtyRequired, location);
         orderRepo.save(order);
     }
+
 
 
     @Transactional
@@ -84,6 +87,23 @@ public class OrderService {
         order.complete();
         return orderRepo.save(order);
     }
+    @Transactional
+    public void pickItem(Long orderId, Long itemId, int qty) {
+        if (orderId == null) throw new IllegalArgumentException("orderId must not be null");
+        if (itemId == null) throw new IllegalArgumentException("itemId must not be null");
+        if (qty <= 0) throw new IllegalArgumentException("qty must be > 0");
+
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+
+        if (!itemRepo.existsById(itemId)) {
+            throw new IllegalArgumentException("Item not found");
+        }
+
+        order.pickItem(itemId, qty);
+        orderRepo.save(order);
+    }
+
 
 
 

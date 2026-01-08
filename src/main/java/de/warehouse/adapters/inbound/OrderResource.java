@@ -20,16 +20,22 @@ public class OrderResource {
     OrderService service;
 
     // ---------- DTOs ----------
+    public record PickItemDTO(Long itemId, int quantity) {}
 
-    public static record CreateOrderDTO(String storeCode, String priority) {}
+    public record CreateOrderDTO(String storeCode, String priority) {}
 
-    public static record AddItemDTO(Long itemId, int quantity) {}
+    public record AddItemDTO(Long itemId, int qtyRequired, String location) {}
 
-    public static record OrderLineResponse(Long itemId, int quantity) {}
+    public record OrderLineResponse(
+            Long itemId,
+            int qtyRequired,
+            int qtyPicked,
+            String location
+    ) {}
 
-    public static record Links(String self) {}
+    public record Links(String self) {}
 
-    public static record OrderResponse(
+    public record OrderResponse(
             Long id,
             String storeCode,
             Priority priority,
@@ -51,7 +57,9 @@ public class OrderResource {
                     order.getLines().stream()
                             .map(line -> new OrderLineResponse(
                                     line.getItemId(),
-                                    line.getQuantity()
+                                    line.getQtyRequired(),
+                                    line.getQtyPicked(),
+                                    line.getLocation()
                             ))
                             .toList(),
                     new Links(self.toString())
@@ -72,7 +80,9 @@ public class OrderResource {
                 .path(order.getId().toString())
                 .build();
 
-        return Response.created(self).build();
+        return Response.created(self)
+                .entity(OrderResponse.from(order, uri))
+                .build();
     }
 
     @GET
@@ -83,19 +93,14 @@ public class OrderResource {
 
     @POST
     @Path("/{id}/items")
-    public Response addItem(
-            @PathParam("id") Long orderId,
-            AddItemDTO dto
-    ) {
-        service.addItem(orderId, dto.itemId(), dto.quantity());
-        return Response.noContent().build(); // 204
+    public Response addItem(@PathParam("id") Long orderId, AddItemDTO dto) {
+        service.addItem(orderId, dto.itemId(), dto.qtyRequired(), dto.location());
+        return Response.noContent().build();
     }
 
     @GET
-    public List<OrderResponse> getByStore(
-            @QueryParam("storeCode") String storeCode,
-            @Context UriInfo uri
-    ) {
+    public List<OrderResponse> getByStore(@QueryParam("storeCode") String storeCode,
+                                          @Context UriInfo uri) {
         return service.getOrdersByStore(storeCode)
                 .stream()
                 .map(order -> OrderResponse.from(order, uri))
@@ -108,4 +113,10 @@ public class OrderResource {
         return OrderResponse.from(service.complete(id), uri);
     }
 
+    @POST
+    @Path("/{id}/pick")
+    public Response pick(@PathParam("id") Long orderId, PickItemDTO dto) {
+        service.pickItem(orderId, dto.itemId(), dto.quantity());
+        return Response.noContent().build();
+    }
 }

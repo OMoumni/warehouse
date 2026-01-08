@@ -5,7 +5,6 @@ import de.warehouse.domain.model.OrderStatus;
 import de.warehouse.domain.model.Priority;
 import jakarta.persistence.*;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +25,6 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     public OrderStatus status;
 
-   // public Instant createdAt;
 
     public static OrderEntity fromDomain(Order order) {
         OrderEntity e = new OrderEntity();
@@ -38,13 +36,16 @@ public class OrderEntity {
         e.lines = order.getLines().stream().map(line -> {
             OrderLineEntity le = new OrderLineEntity();
             le.itemId = line.getItemId();
-            le.quantity = line.getQuantity();
+            le.qtyRequired = line.getQtyRequired();
+            le.qtyPicked = line.getQtyPicked();
+            le.location = line.getLocation();
             le.order = e;
             return le;
         }).toList();
 
         return e;
     }
+
 
     @OneToMany(
             mappedBy = "order",
@@ -53,19 +54,16 @@ public class OrderEntity {
             fetch = FetchType.EAGER
     )
     public List<OrderLineEntity> lines = new ArrayList<>();
-
     public Order toDomain() {
         Order order = new Order(id, storeCode, priority);
-
-
-        order.setStatus(this.status);
+        order.setStatus(status);
 
         for (OrderLineEntity line : lines) {
-            order.addItem(line.itemId, line.quantity);
+            order.restoreLine(line.itemId, line.qtyRequired, line.qtyPicked, line.location);
         }
-
         return order;
     }
 
 }
+
 
